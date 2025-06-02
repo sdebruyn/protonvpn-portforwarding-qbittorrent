@@ -8,6 +8,8 @@ RUN uv export --no-dev -o requirements.txt
 
 FROM python:3.13-alpine
 
+RUN apk add --no-cache iptables
+
 RUN mkdir -p /app
 WORKDIR /app
 
