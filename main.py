@@ -2,7 +2,6 @@ import asyncio
 import logging
 import os
 import sys
-from time import sleep
 import qbittorrentapi
 from natpmp.NATPMP import map_port, NATPMP_PROTOCOL_TCP, NATPMP_PROTOCOL_UDP
 
@@ -34,8 +33,8 @@ def request_single_port(protocol: int, gateway: str) -> int:
     if response.result != 0:
         logger.error(f"Failed to map {protocol_name} port: {response.result}")
         raise Exception(f"Failed to map port: {response.result}")
-    logger.debug(f"Successfully mapped {protocol_name} port {response.private_port}")
-    return response.private_port
+    logger.debug(f"Successfully mapped {protocol_name} with public port {response.public_port} and private port {response.private_port}")
+    return response.public_port
 
 
 def request_proton_ports(proton_gateway: str) -> int:
@@ -47,7 +46,7 @@ def request_proton_ports(proton_gateway: str) -> int:
     return requested_tcp_port
 
 
-def main():
+async def main():
     logger.info("Starting ProtonVPN port forwarding service")
     background_tasks = set()
     interval = int(os.getenv("REQUEST_INTERVAL", 45))
@@ -65,12 +64,12 @@ def main():
             background_tasks.add(task)
             task.add_done_callback(background_tasks.discard)
             logger.debug(f"Sleeping for {interval} seconds before next request")
-            sleep(interval)
+            await asyncio.sleep(interval)
         except Exception as e:
             logger.error("Error in loop", exc_info=e)
             logger.info(f"Retrying in {interval} seconds")
-            sleep(interval)
+            await asyncio.sleep(interval)
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
