@@ -1,7 +1,7 @@
-import asyncio
 import logging
 import os
 import sys
+from time import sleep
 import qbittorrentapi
 from natpmp.NATPMP import map_port, NATPMP_PROTOCOL_TCP, NATPMP_PROTOCOL_UDP
 
@@ -19,10 +19,10 @@ logger = logging.getLogger(__name__)
 qbt_client = qbittorrentapi.Client()
 
 
-async def send_port_to_qbittorrent(port: int) -> None:
+def send_port_to_qbittorrent(port: int) -> None:
     logger.debug(f"Setting qBittorrent listen port to {port}")
     data = {"listen_port": port}
-    await asyncio.to_thread(qbt_client.app_set_preferences, prefs=data)
+    qbt_client.app_set_preferences(prefs=data)
     logger.debug(f"Successfully updated qBittorrent port to {port}")
 
 
@@ -33,7 +33,9 @@ def request_single_port(protocol: int, gateway: str) -> int:
     if response.result != 0:
         logger.error(f"Failed to map {protocol_name} port: {response.result}")
         raise Exception(f"Failed to map port: {response.result}")
-    logger.debug(f"Successfully mapped {protocol_name} with public port {response.public_port} and private port {response.private_port}")
+    logger.debug(
+        f"Successfully mapped {protocol_name} with public port {response.public_port} and private port {response.private_port}"
+    )
     return response.public_port
 
 
@@ -46,9 +48,8 @@ def request_proton_ports(proton_gateway: str) -> int:
     return requested_tcp_port
 
 
-async def main():
+def main():
     logger.info("Starting ProtonVPN port forwarding service")
-    background_tasks = set()
     interval = int(os.getenv("REQUEST_INTERVAL", 45))
     proton_gateway = os.getenv("PROTON_GATEWAY", "10.2.0.1")
     logger.info(f"Configuration: interval={interval}s, gateway={proton_gateway}")
@@ -60,16 +61,14 @@ async def main():
             logger.debug(
                 f"Port {requested_port} successfully mapped, updating qBittorrent"
             )
-            task = asyncio.create_task(send_port_to_qbittorrent(requested_port))
-            background_tasks.add(task)
-            task.add_done_callback(background_tasks.discard)
+            send_port_to_qbittorrent(requested_port)
             logger.debug(f"Sleeping for {interval} seconds before next request")
-            await asyncio.sleep(interval)
         except Exception as e:
-            logger.error("Error in loop", exc_info=e)
+            logger.error(f"Error in main loop: {e}")
             logger.info(f"Retrying in {interval} seconds")
-            await asyncio.sleep(interval)
+        finally:
+            sleep(interval)
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
