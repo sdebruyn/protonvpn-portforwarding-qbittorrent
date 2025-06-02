@@ -48,6 +48,20 @@ def request_proton_ports(proton_gateway: str) -> int:
     return requested_tcp_port
 
 
+def configure_iptables(port: int) -> None:
+    logger.debug(f"Configuring iptables for port {port}")
+    
+    # Allow incoming TCP traffic on the port
+    tcp_cmd = f"iptables -A INPUT -p tcp --dport {port} -j ACCEPT"
+    logger.debug(f"Running: {tcp_cmd}")
+    os.system(tcp_cmd)
+    
+    # Allow incoming UDP traffic on the port  
+    udp_cmd = f"iptables -A INPUT -p udp --dport {port} -j ACCEPT"
+    logger.debug(f"Running: {udp_cmd}")
+    os.system(udp_cmd)
+
+
 def main():
     logger.info("Starting ProtonVPN port forwarding service")
     interval = int(os.getenv("REQUEST_INTERVAL", 45))
@@ -62,6 +76,7 @@ def main():
                 f"Port {requested_port} successfully mapped, updating qBittorrent"
             )
             send_port_to_qbittorrent(requested_port)
+            configure_iptables(requested_port)
             logger.debug(f"Sleeping for {interval} seconds before next request")
         except Exception as e:
             logger.error(f"Error in main loop: {e}")
