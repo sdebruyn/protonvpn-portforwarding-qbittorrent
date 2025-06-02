@@ -52,12 +52,12 @@ def configure_iptables(port: int) -> None:
     logger.debug(f"Configuring iptables for port {port}")
     
     # Allow incoming TCP traffic on the port
-    tcp_cmd = f"iptables-legacy -A INPUT -p tcp --dport {port} -j ACCEPT"
+    tcp_cmd = f"iptables-legacy -A INPUT -p tcp -m tcp --dport {port} -j ACCEPT"
     logger.debug(f"Running: {tcp_cmd}")
     os.system(tcp_cmd)
     
     # Allow incoming UDP traffic on the port  
-    udp_cmd = f"iptables-legacy -A INPUT -p udp --dport {port} -j ACCEPT"
+    udp_cmd = f"iptables-legacy -A INPUT -p udp -m udp --dport {port} -j ACCEPT"
     logger.debug(f"Running: {udp_cmd}")
     os.system(udp_cmd)
 
