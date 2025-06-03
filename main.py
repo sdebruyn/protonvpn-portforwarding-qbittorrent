@@ -7,17 +7,20 @@ import qbittorrentapi
 from natpmp.NATPMP import map_port, NATPMP_PROTOCOL_TCP, NATPMP_PROTOCOL_UDP
 
 DEBUG_LOGGING = os.getenv("DEBUG_LOGGING", "false").lower() == "true"
+default_logging_level = logging.DEBUG if DEBUG_LOGGING else logging.INFO
 
-# Configure logging to stdout
-logging.basicConfig(
-    level=logging.DEBUG if DEBUG_LOGGING else logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s",
-    handlers=[logging.StreamHandler(sys.stdout)],
-)
 logger = logging.getLogger(__name__)
 
 
 qbt_client = qbittorrentapi.Client()
+
+
+def configure_logger(log_level: int|None = None) -> None:
+    logging.basicConfig(
+        level=log_level or default_logging_level,
+        format="%(asctime)s - %(levelname)s - %(message)s",
+        handlers=[logging.StreamHandler(sys.stdout)],
+    )
 
 
 def send_port_to_qbittorrent(port: int) -> None:
@@ -72,7 +75,9 @@ def main():
             send_port_to_qbittorrent(requested_port)
             store_current_timestamp_in_file()
             logger.debug(f"Sleeping for {interval} seconds before next request")
+            configure_logger()
         except Exception as e:
+            configure_logger(logging.DEBUG)
             logger.error(f"Error in main loop: {e}")
             logger.info(f"Retrying in {interval} seconds")
         finally:
