@@ -11,7 +11,12 @@ FROM python:3.13-alpine
 RUN mkdir -p /app
 WORKDIR /app
 
-COPY --from=build /build/requirements.txt /build/main.py /app/
+COPY --from=build /build/requirements.txt /build/main.py /build/healthcheck.sh /app/
+RUN chmod +x /app/healthcheck.sh
 RUN pip install --no-cache-dir -r requirements.txt
+
+
+HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
+  CMD ["/app/healthcheck.sh"]
 
 CMD ["python", "main.py"]

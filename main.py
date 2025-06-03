@@ -2,6 +2,7 @@ import logging
 import os
 import sys
 from time import sleep
+from time import time
 import qbittorrentapi
 from natpmp.NATPMP import map_port, NATPMP_PROTOCOL_TCP, NATPMP_PROTOCOL_UDP
 
@@ -48,6 +49,13 @@ def request_proton_ports(proton_gateway: str) -> int:
     return requested_tcp_port
 
 
+def store_current_timestamp_in_file() -> None:
+    timestamp_file = "/app/last_updated"
+    with open(timestamp_file, "w") as f:
+        f.write(str(int(time())))
+    logger.debug(f"Stored current timestamp in {timestamp_file}")
+
+
 def main():
     logger.info("Starting ProtonVPN port forwarding service")
     interval = int(os.getenv("REQUEST_INTERVAL", 45))
@@ -62,6 +70,7 @@ def main():
                 f"Port {requested_port} successfully mapped, updating qBittorrent"
             )
             send_port_to_qbittorrent(requested_port)
+            store_current_timestamp_in_file()
             logger.debug(f"Sleeping for {interval} seconds before next request")
         except Exception as e:
             logger.error(f"Error in main loop: {e}")
