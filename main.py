@@ -7,20 +7,21 @@ import qbittorrentapi
 from natpmp.NATPMP import map_port, NATPMP_PROTOCOL_TCP, NATPMP_PROTOCOL_UDP
 
 DEBUG_LOGGING = os.getenv("DEBUG_LOGGING", "false").lower() == "true"
-default_logging_level = logging.DEBUG if DEBUG_LOGGING else logging.INFO
+DEFAULT_LOGGING_LEVEL = logging.DEBUG if DEBUG_LOGGING else logging.INFO
+
+logging.basicConfig(
+    level=DEFAULT_LOGGING_LEVEL,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    handlers=[logging.StreamHandler(sys.stdout)],
+)
 
 logger = logging.getLogger(__name__)
-
 
 qbt_client = qbittorrentapi.Client()
 
 
-def configure_logger(log_level: int|None = None) -> None:
-    logging.basicConfig(
-        level=log_level or default_logging_level,
-        format="%(asctime)s - %(levelname)s - %(message)s",
-        handlers=[logging.StreamHandler(sys.stdout)],
-    )
+def configure_logger(log_level: int | None = None) -> None:
+    logger.setLevel(log_level or DEFAULT_LOGGING_LEVEL)
 
 
 def send_port_to_qbittorrent(port: int) -> None:
@@ -60,6 +61,7 @@ def store_current_timestamp_in_file() -> None:
 
 
 def main():
+    configure_logger()
     logger.info("Starting ProtonVPN port forwarding service")
     interval = int(os.getenv("REQUEST_INTERVAL", 45))
     proton_gateway = os.getenv("PROTON_GATEWAY", "10.2.0.1")
